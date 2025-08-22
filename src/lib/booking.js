@@ -1,5 +1,5 @@
-const { sql } = require('@vercel/postgres');
-const { google } = require('googleapis');
+import { sql } from '@vercel/postgres';
+import { google } from 'googleapis';
 
 /**
  * Validate a booking request
@@ -187,7 +187,7 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
-module.exports = {
+export {
   createBooking,
   validateBookingRequest,
   createCalendarEvent,

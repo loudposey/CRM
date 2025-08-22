@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createBooking } from '../../../lib/booking.js';
 import { sql } from '@vercel/postgres';
 
+interface BookingResult {
+  success: boolean;
+  booking?: object;
+  error?: string;
+  errors?: string[];
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const result = await createBooking(body);
+    const result = await createBooking(body) as BookingResult;
 
     if (result.success) {
       return NextResponse.json({

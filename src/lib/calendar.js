@@ -1,5 +1,5 @@
-const { google } = require('googleapis');
-const { isBusinessDay } = require('./holidays.js');
+import { google } from 'googleapis';
+import { isBusinessDay } from './holidays.js';
 
 /**
  * Get available 30-minute time slots for a given date
@@ -113,7 +113,7 @@ function generateTimeSlots(date) {
   return slots;
 }
 
-module.exports = {
+export {
   getAvailableTimeSlots,
   generateTimeSlots
 };

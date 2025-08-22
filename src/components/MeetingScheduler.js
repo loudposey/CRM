@@ -87,7 +87,7 @@ export default function MeetingScheduler() {
               Meeting Scheduled!
             </h2>
             <p className="text-gray-600 mb-4">
-              Your meeting has been successfully scheduled. You'll receive a calendar invite shortly.
+              Your meeting has been successfully scheduled. You&apos;ll receive a calendar invite shortly.
             </p>
           </div>
 
@@ -129,7 +129,7 @@ export default function MeetingScheduler() {
               {bookingResult.booking.zoom_join_url === null && (
                 <div className="mt-4 p-3 bg-yellow-50 rounded border-l-4 border-yellow-400">
                   <p className="text-sm text-yellow-700">
-                    📅 Meeting scheduled successfully! Zoom meeting creation is pending - you'll receive the meeting link via email.
+                    📅 Meeting scheduled successfully! Zoom meeting creation is pending - you&apos;ll receive the meeting link via email.
                   </p>
                 </div>
               )}
