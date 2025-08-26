@@ -29,7 +29,7 @@ async function getAvailableTimeSlots(date) {
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-    // Generate time slots for business hours (9 AM - 5 PM)
+    // Generate time slots for business hours (7 AM - 5 PM Mountain Time)
     const timeSlots = generateTimeSlots(date);
 
     // Get existing events for the day
@@ -81,30 +81,36 @@ async function getAvailableTimeSlots(date) {
 }
 
 /**
- * Generate 30-minute time slots for business hours (9 AM - 5 PM)
+ * Generate 30-minute time slots for business hours (7 AM - 5 PM Mountain Time)
  * @param {Date} date - The date to generate slots for
  * @returns {Array} Array of time slot objects
  */
 function generateTimeSlots(date) {
   const slots = [];
-  const startHour = 9; // 9 AM
-  const endHour = 17; // 5 PM
+  const startHour = 7; // 7 AM Mountain Time
+  const endHour = 17; // 5 PM Mountain Time
   const slotDuration = 30; // 30 minutes
 
+  // Create dates in Mountain Time (MDT/MST)
+  // Convert the date to Mountain Time using America/Denver timezone
   for (let hour = startHour; hour < endHour; hour++) {
     for (let minute = 0; minute < 60; minute += slotDuration) {
-      // Use the date's year, month, and day to avoid timezone issues
-      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0, 0);
+      // Create time slots in Mountain Time
+      // Use the input date but set specific Mountain Time hours
+      const mountainTimeString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
       
+      // Create dates that represent Mountain Time slots
+      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0, 0);
       const end = new Date(start);
       end.setMinutes(end.getMinutes() + slotDuration);
       
-      // Don't include slots that end after business hours
+      // Don't include slots that end after business hours (5 PM Mountain)
       if (end.getHours() <= endHour) {
         slots.push({
           start,
           end,
-          available: true // Default to available
+          available: true, // Default to available
+          mountainTimeDisplay: `${String(hour > 12 ? hour - 12 : hour || 12).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'} MT`
         });
       }
     }
