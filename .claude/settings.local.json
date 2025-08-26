@@ -9,7 +9,10 @@
       "Bash(git push:*)",
       "Bash(git config:*)",
       "Bash(rm:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(npx husky init:*)",
+      "Bash(npm run lint)"
     ],
     "deny": [],
     "ask": []
