@@ -53,4 +53,39 @@ describe('Mountain Time Slot Validation', () => {
     // 7:00-17:00 = 10 hours = 20 thirty-minute slots
     expect(slots.length).toBe(20);
   });
+
+  test('should NOT offer any slots in the past for TODAY', () => {
+    // Use today's date
+    const today = new Date();
+    const slots = generateTimeSlots(today);
+    
+    // Get current time in Mountain Time for comparison
+    const nowMT = new Date();
+    const currentMTString = nowMT.toLocaleString("en-US", {timeZone: "America/Denver"});
+    const currentMT = new Date(currentMTString);
+    
+    slots.forEach(slot => {
+      // Convert each slot to Mountain Time
+      const slotMTString = slot.start.toLocaleString("en-US", {timeZone: "America/Denver"});
+      const slotMT = new Date(slotMTString);
+      
+      // Every slot should be in the future (Mountain Time)
+      expect(slotMT.getTime()).toBeGreaterThan(currentMT.getTime());
+    });
+  });
+
+  test('should offer future slots starting from current hour + buffer', () => {
+    const today = new Date();
+    const slots = generateTimeSlots(today);
+    
+    if (slots.length > 0) {
+      // First available slot should be soon but not in past
+      const firstSlot = slots[0];
+      const firstSlotMT = new Date(firstSlot.start.toLocaleString("en-US", {timeZone: "America/Denver"}));
+      const nowMT = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Denver"}));
+      
+      // Should be at least current time or later
+      expect(firstSlotMT.getTime()).toBeGreaterThanOrEqual(nowMT.getTime());
+    }
+  });
 });

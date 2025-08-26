@@ -103,15 +103,8 @@ function generateTimeSlots(date) {
   for (let hour = startHour; hour < endHour; hour++) {
     for (let minute = 0; minute < 60; minute += slotDuration) {
       
-      // Create slot time directly in Mountain Time
-      // Create a date object representing this time in Mountain Time
-      const slotMT = new Date();
-      slotMT.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
-      slotMT.setHours(hour, minute, 0, 0);
-      
-      // Convert to UTC for storage (browsers will handle timezone display)
-      const start = new Date(slotMT.getTime() - (slotMT.getTimezoneOffset() * 60000) + (getMountainTimeOffset(date)));
-      const end = new Date(start.getTime() + slotDuration * 60 * 1000);
+      // Create the Mountain Time slot directly - much simpler approach
+      const slotMT = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0, 0);
       
       // For today, skip slots that are in the past (compare in Mountain Time)
       let isPastTime = false;
@@ -120,6 +113,10 @@ function generateTimeSlots(date) {
       }
       
       if (!isPastTime) {
+        // Create UTC times for API response (browsers will convert to user's timezone)
+        const start = new Date(slotMT);
+        const end = new Date(slotMT.getTime() + slotDuration * 60 * 1000);
+        
         slots.push({
           start,
           end,
