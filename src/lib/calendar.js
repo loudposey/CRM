@@ -81,9 +81,9 @@ async function getAvailableTimeSlots(date) {
 }
 
 /**
- * Generate 30-minute time slots excluding blocked hours (5 PM - 7 AM Mountain Time)
- * @param {Date} date - The date to generate slots for
- * @returns {Array} Array of time slot objects
+ * Generate 30-minute time slots in Mountain Time, excluding blocked hours (5 PM - 7 AM MT)
+ * @param {Date} date - The date to generate slots for (in client's timezone)
+ * @returns {Array} Array of time slot objects in Mountain Time
  */
 function generateTimeSlots(date) {
   const slots = [];
@@ -91,33 +91,38 @@ function generateTimeSlots(date) {
   const blockedEndHour = 7; // 7 AM Mountain Time (end of blocked period)
   const slotDuration = 30; // 30 minutes
   
-  // Get current time in Mountain Time for comparison
+  // Get current time in Mountain Time
   const now = new Date();
-  const currentMountainTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Denver"}));
+  const nowMT = new Date(now.toLocaleString("en-US", {timeZone: "America/Denver"}));
   
-  // Check if this is today's date
-  const isToday = date.toDateString() === currentMountainTime.toDateString();
+  // Create the date in Mountain Time for comparison
+  const dateMT = new Date(date.toLocaleString("en-US", {timeZone: "America/Denver"}));
+  const isToday = dateMT.toDateString() === nowMT.toDateString();
 
-  // Generate slots for the full 24-hour period, then filter out blocked times
-  for (let hour = 0; hour < 24; hour++) {
+  // Generate slots for available hours in Mountain Time (7 AM - 5 PM)
+  for (let hour = blockedEndHour; hour < blockedStartHour; hour++) {
     for (let minute = 0; minute < 60; minute += slotDuration) {
-      // Skip blocked hours (5 PM to 7 AM Mountain Time)
-      const isBlockedTime = hour >= blockedStartHour || hour < blockedEndHour;
-      if (isBlockedTime) {
-        continue; // Skip this time slot
-      }
-
-      // Create dates that represent Mountain Time slots
-      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0, 0);
-      const end = new Date(start);
-      end.setMinutes(end.getMinutes() + slotDuration);
       
-      // For today, skip slots that are in the past
+      // Create slot time in Mountain Time
+      // Use UTC constructor and manually adjust for Mountain Time offset
+      const mountainOffset = getMountainTimeOffset(date);
+      const startUTC = Date.UTC(
+        date.getFullYear(), 
+        date.getMonth(), 
+        date.getDate(), 
+        hour, 
+        minute, 
+        0
+      ) - mountainOffset;
+      
+      const start = new Date(startUTC);
+      const end = new Date(startUTC + slotDuration * 60 * 1000);
+      
+      // For today, skip slots that are in the past (compare in Mountain Time)
       let isPastTime = false;
       if (isToday) {
-        // Convert slot time to Mountain Time for comparison
-        const slotMountainTime = new Date(start.toLocaleString("en-US", {timeZone: "America/Denver"}));
-        isPastTime = slotMountainTime <= currentMountainTime;
+        const slotMT = new Date(start.toLocaleString("en-US", {timeZone: "America/Denver"}));
+        isPastTime = slotMT <= nowMT;
       }
       
       if (!isPastTime) {
@@ -125,7 +130,7 @@ function generateTimeSlots(date) {
           start,
           end,
           available: true, // Default to available
-          mountainTimeDisplay: `${String(hour > 12 ? hour - 12 : hour || 12).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'} MT`
+          mountainTimeDisplay: `${String(hour > 12 ? hour - 12 : hour === 0 ? 12 : hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'} MT`
         });
       }
     }
@@ -134,7 +139,26 @@ function generateTimeSlots(date) {
   return slots;
 }
 
+/**
+ * Get Mountain Time offset in milliseconds for a given date
+ * Handles both MST (-7) and MDT (-6) automatically
+ */
+function getMountainTimeOffset(date) {
+  const temp = new Date(date);
+  const utc = temp.getTime() + (temp.getTimezoneOffset() * 60000);
+  const mountainTime = new Date(utc - (7 * 3600000)); // MST is UTC-7
+  
+  // Check if daylight saving time is in effect
+  const jan = new Date(date.getFullYear(), 0, 1);
+  const jul = new Date(date.getFullYear(), 6, 1);
+  const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+  const isDST = date.getTimezoneOffset() < stdOffset;
+  
+  return isDST ? 6 * 3600000 : 7 * 3600000; // MDT is UTC-6, MST is UTC-7
+}
+
 export {
   getAvailableTimeSlots,
-  generateTimeSlots
+  generateTimeSlots,
+  getMountainTimeOffset
 };
