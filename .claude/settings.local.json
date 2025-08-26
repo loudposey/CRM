@@ -12,7 +12,9 @@
       "Bash(npm run dev:*)",
       "Bash(npm install:*)",
       "Bash(npx husky init:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:regression:*)"
     ],
     "deny": [],
     "ask": []

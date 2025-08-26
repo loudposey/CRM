@@ -81,14 +81,14 @@ async function getAvailableTimeSlots(date) {
 }
 
 /**
- * Generate 30-minute time slots in Mountain Time, excluding blocked hours (5 PM - 7 AM MT)
- * @param {Date} date - The date to generate slots for (in client's timezone)
+ * Generate 30-minute time slots ONLY between 07:00-17:00 Mountain Time
+ * @param {Date} date - The date to generate slots for
  * @returns {Array} Array of time slot objects in Mountain Time
  */
 function generateTimeSlots(date) {
   const slots = [];
-  const blockedStartHour = 17; // 5 PM Mountain Time (start of blocked period)
-  const blockedEndHour = 7; // 7 AM Mountain Time (end of blocked period)
+  const startHour = 7; // 07:00 Mountain Time
+  const endHour = 17; // 17:00 Mountain Time (exclusive - so stops at 16:30)
   const slotDuration = 30; // 30 minutes
   
   // Get current time in Mountain Time
@@ -99,34 +99,23 @@ function generateTimeSlots(date) {
   const dateMT = new Date(date.toLocaleString("en-US", {timeZone: "America/Denver"}));
   const isToday = dateMT.toDateString() === nowMT.toDateString();
 
-  // Generate slots for all hours, then filter out blocked times (5 PM - 7 AM)
-  for (let hour = 0; hour < 24; hour++) {
-    // Skip blocked hours (5 PM to 7 AM Mountain Time)
-    if (hour >= blockedStartHour || hour < blockedEndHour) {
-      continue; // Skip this blocked hour
-    }
-    
+  // Generate slots ONLY between 07:00-17:00 Mountain Time
+  for (let hour = startHour; hour < endHour; hour++) {
     for (let minute = 0; minute < 60; minute += slotDuration) {
       
-      // Create slot time in Mountain Time
-      // Use UTC constructor and manually adjust for Mountain Time offset
-      const mountainOffset = getMountainTimeOffset(date);
-      const startUTC = Date.UTC(
-        date.getFullYear(), 
-        date.getMonth(), 
-        date.getDate(), 
-        hour, 
-        minute, 
-        0
-      ) - mountainOffset;
+      // Create slot time directly in Mountain Time
+      // Create a date object representing this time in Mountain Time
+      const slotMT = new Date();
+      slotMT.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+      slotMT.setHours(hour, minute, 0, 0);
       
-      const start = new Date(startUTC);
-      const end = new Date(startUTC + slotDuration * 60 * 1000);
+      // Convert to UTC for storage (browsers will handle timezone display)
+      const start = new Date(slotMT.getTime() - (slotMT.getTimezoneOffset() * 60000) + (getMountainTimeOffset(date)));
+      const end = new Date(start.getTime() + slotDuration * 60 * 1000);
       
       // For today, skip slots that are in the past (compare in Mountain Time)
       let isPastTime = false;
       if (isToday) {
-        const slotMT = new Date(start.toLocaleString("en-US", {timeZone: "America/Denver"}));
         isPastTime = slotMT <= nowMT;
       }
       
@@ -151,7 +140,7 @@ function generateTimeSlots(date) {
 function getMountainTimeOffset(date) {
   const temp = new Date(date);
   const utc = temp.getTime() + (temp.getTimezoneOffset() * 60000);
-  const mountainTime = new Date(utc - (7 * 3600000)); // MST is UTC-7
+  // MST is UTC-7, MDT is UTC-6
   
   // Check if daylight saving time is in effect
   const jan = new Date(date.getFullYear(), 0, 1);
