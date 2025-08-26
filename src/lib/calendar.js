@@ -29,7 +29,7 @@ async function getAvailableTimeSlots(date) {
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-    // Generate time slots for business hours (7 AM - 5 PM Mountain Time)
+    // Generate time slots excluding blocked hours (5 PM - 7 AM Mountain Time)
     const timeSlots = generateTimeSlots(date);
 
     // Get existing events for the day
@@ -81,31 +81,46 @@ async function getAvailableTimeSlots(date) {
 }
 
 /**
- * Generate 30-minute time slots for business hours (7 AM - 5 PM Mountain Time)
+ * Generate 30-minute time slots excluding blocked hours (5 PM - 7 AM Mountain Time)
  * @param {Date} date - The date to generate slots for
  * @returns {Array} Array of time slot objects
  */
 function generateTimeSlots(date) {
   const slots = [];
-  const startHour = 7; // 7 AM Mountain Time
-  const endHour = 17; // 5 PM Mountain Time
+  const blockedStartHour = 17; // 5 PM Mountain Time (start of blocked period)
+  const blockedEndHour = 7; // 7 AM Mountain Time (end of blocked period)
   const slotDuration = 30; // 30 minutes
+  
+  // Get current time in Mountain Time for comparison
+  const now = new Date();
+  const currentMountainTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Denver"}));
+  
+  // Check if this is today's date
+  const isToday = date.toDateString() === currentMountainTime.toDateString();
 
-  // Create dates in Mountain Time (MDT/MST)
-  // Convert the date to Mountain Time using America/Denver timezone
-  for (let hour = startHour; hour < endHour; hour++) {
+  // Generate slots for the full 24-hour period, then filter out blocked times
+  for (let hour = 0; hour < 24; hour++) {
     for (let minute = 0; minute < 60; minute += slotDuration) {
-      // Create time slots in Mountain Time
-      // Use the input date but set specific Mountain Time hours
-      const mountainTimeString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
-      
+      // Skip blocked hours (5 PM to 7 AM Mountain Time)
+      const isBlockedTime = hour >= blockedStartHour || hour < blockedEndHour;
+      if (isBlockedTime) {
+        continue; // Skip this time slot
+      }
+
       // Create dates that represent Mountain Time slots
       const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0, 0);
       const end = new Date(start);
       end.setMinutes(end.getMinutes() + slotDuration);
       
-      // Don't include slots that end after business hours (5 PM Mountain)
-      if (end.getHours() <= endHour) {
+      // For today, skip slots that are in the past
+      let isPastTime = false;
+      if (isToday) {
+        // Convert slot time to Mountain Time for comparison
+        const slotMountainTime = new Date(start.toLocaleString("en-US", {timeZone: "America/Denver"}));
+        isPastTime = slotMountainTime <= currentMountainTime;
+      }
+      
+      if (!isPastTime) {
         slots.push({
           start,
           end,
