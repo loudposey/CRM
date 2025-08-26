@@ -99,8 +99,13 @@ function generateTimeSlots(date) {
   const dateMT = new Date(date.toLocaleString("en-US", {timeZone: "America/Denver"}));
   const isToday = dateMT.toDateString() === nowMT.toDateString();
 
-  // Generate slots for available hours in Mountain Time (7 AM - 5 PM)
-  for (let hour = blockedEndHour; hour < blockedStartHour; hour++) {
+  // Generate slots for all hours, then filter out blocked times (5 PM - 7 AM)
+  for (let hour = 0; hour < 24; hour++) {
+    // Skip blocked hours (5 PM to 7 AM Mountain Time)
+    if (hour >= blockedStartHour || hour < blockedEndHour) {
+      continue; // Skip this blocked hour
+    }
+    
     for (let minute = 0; minute < 60; minute += slotDuration) {
       
       // Create slot time in Mountain Time
