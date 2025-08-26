@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAvailableTimeSlots } from '../../../../lib/calendar.js';
+import { getAvailableTimeSlots } from '../../../../src/lib/calendar.js';
 
 export async function GET(request: NextRequest) {
   try {

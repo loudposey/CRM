@@ -1,4 +1,4 @@
-import MeetingScheduler from '../components/MeetingScheduler.js';
+import MeetingScheduler from '../src/components/MeetingScheduler.js';
 
 export default function Home() {
   return (
