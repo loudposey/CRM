@@ -33,10 +33,7 @@ export default function MeetingScheduler() {
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
       {currentStep === 'calendar' && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Select a Time Slot</h2>
-          <CalendarView onSlotSelect={handleSlotSelect} />
-        </div>
+        <CalendarView onSlotSelect={handleSlotSelect} />
       )}
 
       {currentStep === 'form' && selectedSlot && (

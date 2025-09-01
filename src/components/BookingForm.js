@@ -56,7 +56,7 @@ export default function BookingForm({ selectedSlot, onBookingComplete }) {
       } else {
         setErrors({ submit: result.error || 'Failed to schedule meeting' });
       }
-    } catch (error) {
+    } catch {
       setErrors({ submit: 'Failed to connect to server' });
     } finally {
       setSubmitting(false);
