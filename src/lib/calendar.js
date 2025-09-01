@@ -29,7 +29,7 @@ async function getAvailableTimeSlots(date) {
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-    // Generate time slots for business hours (9 AM - 5 PM)
+    // Generate time slots excluding blocked hours (5 PM - 7 AM Mountain Time)
     const timeSlots = generateTimeSlots(date);
 
     // Get existing events for the day
@@ -81,30 +81,47 @@ async function getAvailableTimeSlots(date) {
 }
 
 /**
- * Generate 30-minute time slots for business hours (9 AM - 5 PM)
+ * Generate 30-minute time slots ONLY between 07:00-17:00 Mountain Time
  * @param {Date} date - The date to generate slots for
- * @returns {Array} Array of time slot objects
+ * @returns {Array} Array of time slot objects in Mountain Time
  */
 function generateTimeSlots(date) {
   const slots = [];
-  const startHour = 9; // 9 AM
-  const endHour = 17; // 5 PM
+  const startHour = 7; // 07:00 Mountain Time
+  const endHour = 17; // 17:00 Mountain Time (exclusive - so stops at 16:30)
   const slotDuration = 30; // 30 minutes
+  
+  // Get current time in Mountain Time
+  const now = new Date();
+  const nowMT = new Date(now.toLocaleString("en-US", {timeZone: "America/Denver"}));
+  
+  // Create the date in Mountain Time for comparison
+  const dateMT = new Date(date.toLocaleString("en-US", {timeZone: "America/Denver"}));
+  const isToday = dateMT.toDateString() === nowMT.toDateString();
 
+  // Generate slots ONLY between 07:00-17:00 Mountain Time
   for (let hour = startHour; hour < endHour; hour++) {
     for (let minute = 0; minute < 60; minute += slotDuration) {
-      // Use the date's year, month, and day to avoid timezone issues
-      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0, 0);
       
-      const end = new Date(start);
-      end.setMinutes(end.getMinutes() + slotDuration);
+      // Create the Mountain Time slot directly - much simpler approach
+      const slotMT = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0, 0);
       
-      // Don't include slots that end after business hours
-      if (end.getHours() <= endHour) {
+      // For today, skip slots that are in the past (compare in Mountain Time)
+      let isPastTime = false;
+      if (isToday) {
+        isPastTime = slotMT <= nowMT;
+      }
+      
+      if (!isPastTime) {
+        // Create UTC times for API response (browsers will convert to user's timezone)
+        const start = new Date(slotMT);
+        const end = new Date(slotMT.getTime() + slotDuration * 60 * 1000);
+        
         slots.push({
           start,
           end,
-          available: true // Default to available
+          available: true, // Default to available
+          mountainTimeDisplay: `${String(hour > 12 ? hour - 12 : hour === 0 ? 12 : hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'} MT`
         });
       }
     }
@@ -113,7 +130,26 @@ function generateTimeSlots(date) {
   return slots;
 }
 
+/**
+ * Get Mountain Time offset in milliseconds for a given date
+ * Handles both MST (-7) and MDT (-6) automatically
+ */
+function getMountainTimeOffset(date) {
+  const temp = new Date(date);
+  const utc = temp.getTime() + (temp.getTimezoneOffset() * 60000);
+  // MST is UTC-7, MDT is UTC-6
+  
+  // Check if daylight saving time is in effect
+  const jan = new Date(date.getFullYear(), 0, 1);
+  const jul = new Date(date.getFullYear(), 6, 1);
+  const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+  const isDST = date.getTimezoneOffset() < stdOffset;
+  
+  return isDST ? 6 * 3600000 : 7 * 3600000; // MDT is UTC-6, MST is UTC-7
+}
+
 export {
   getAvailableTimeSlots,
-  generateTimeSlots
+  generateTimeSlots,
+  getMountainTimeOffset
 };

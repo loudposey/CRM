@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(npx next dev:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git config:*)",
+      "Bash(rm:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(npx husky init:*)",
+      "Bash(npm run lint)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:regression:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

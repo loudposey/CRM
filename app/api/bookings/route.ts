@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createBooking } from '../../../lib/booking.js';
+import { createBooking } from '../../../src/lib/booking.js';
 import { sql } from '@vercel/postgres';
 
 interface BookingResult {
